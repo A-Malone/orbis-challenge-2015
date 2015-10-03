@@ -9,9 +9,15 @@ public class PlayerAI extends ClientAI {
 	@Override
 	public Move getMove(Gameboard gameboard, Opponent opponent, Player player)
 			throws NoItemException, MapOutOfBoundsException {
-		System.out.println(checkForWall(gameboard, new Point(1, 0), new Point(1, 0))); // false
-		System.out.println(checkForWall(gameboard, new Point(1, 0), new Point(3, 0))); // true
-		System.out.println(checkForWall(gameboard, new Point(1, 0), new Point(2, 1))); // false
+		// Check for wall tester
+		// System.out.println(checkForWall(gameboard, new Point(1, 0), new
+		// Point(3, 0)) + " == true");
+		// System.out.println(checkForWall(gameboard, new Point(1, 0), new
+		// Point(2, 1)) + " == false");
+		// System.out.println(checkForWall(gameboard, new Point(2, 5), new
+		// Point(2, 2)) + " == true");
+		// System.out.println(checkForWall(gameboard, new Point(0, 3), new
+		// Point(4, 3)) + " == false");
 
 		// int[][] pmap = getPotentialMap(gameboard, opponent, player);
 		// for (int y = 0; y < gameboard.getHeight(); y++) {
@@ -42,15 +48,17 @@ public class PlayerAI extends ClientAI {
 			}
 		}
 		Queue<Node> openSet = new PriorityQueue<>((n1, n2) -> {
-			return n2.heuristicCost - n1.heuristicCost;
+			return n1.heuristicCost - n2.heuristicCost;
 		});
+		openSet.add(allNodes[start.x][start.y]);
 		Set<Node> closedSet = new HashSet<>();
 		// If we can't make it to our destination in less than maxDistance
 		// steps, there is a wall in the way
-		int maxDistance = manDistance(gameboard, start.getX(), start.getY(), finish.getX(), finish.getY());
+		int maxDistance = manDistance(gameboard, start.getX(), start.getY(), finish.getX(), finish.getY()) + 5;
+		System.out.println(maxDistance);
 		for (int i = 0; i < maxDistance && !openSet.isEmpty(); i++) {
 			Node current = openSet.poll();
-			System.out.println(current.x + " " + current.y);
+			System.out.println(current.x + ", " + current.y);
 			// Finish
 			if (current.x == finish.x && current.y == finish.y) {
 				return false;
@@ -58,7 +66,7 @@ public class PlayerAI extends ClientAI {
 			closedSet.add(current);
 			// Neighbors
 			for (Node n : getNeighbors(gameboard, allNodes, current)) {
-				if (closedSet.contains(n) || gameboard.isWallAtTile(n.x, n.y)) {
+				if (closedSet.contains(n) || gameboard.isWallAtTile(n.x, n.y) || gameboard.isTurretAtTile(n.x, n.y)) {
 					continue;
 				}
 				int tentative_g_score = current.distanceFromStart + 1;
