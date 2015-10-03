@@ -1,0 +1,26 @@
+{
+	"width": 5,
+	"height": 7,
+	"player1X": 1,
+	"player1Y": 1,
+	"player2X": 3,
+	"player2Y": 5,
+	"initialHP": 2,
+	"maxTurns": 50,
+	"turrets": [{
+		"x":  0,
+		"y": 0,
+		"fireTime": 2,
+		"cooldownTime": 3
+	},{
+		"x":  4,
+		"y": 6,
+		"fireTime": 2,
+		"cooldownTime": 3
+	}],
+	"shield": [{"x":1,"y":5},{"x":3,"y":1}],
+	"teleport": [],
+	"teleportPad": [],
+	"laser": [{"x":1,"y":3},{"x":3,"y":3}],
+	"walls": [{"x":2,"y":0},{"x":2,"y":3},{"x":2,"y":6}]
+	}
