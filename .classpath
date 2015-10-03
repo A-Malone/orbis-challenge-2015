@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="C:/Users/wesley/Desktop/Orbis 2015/Java/Java Library/BotRampage.jar"/>
-	<classpathentry kind="lib" path="C:/Users/wesley/Desktop/Orbis 2015/Java/Java Library/JavaClient.jar"/>
+	<classpathentry kind="lib" path="lib/BotRampage.jar"/>
+	<classpathentry kind="lib" path="lib/JavaClient.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
