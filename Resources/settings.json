@@ -1,7 +1,7 @@
 {
-	"numberOfAIPlayers": "1",
+	"numberOfAIPlayers": "2",
 	"renderGUI": "true",
-	"mapName": "SimpleMap1.json",
+	"mapName": "Map1.json",
 	"swapAIPlayers": "false",
 	"maxResponseTime": "250",
 	"keyboardDelay": "300",
