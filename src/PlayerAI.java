@@ -10,7 +10,10 @@ public class PlayerAI extends ClientAI {
 	static final int PLAYER_SCORE = 750;
 	static final int TURRET_SCORE = 500;
 
-	static final int DANGER_THRESHOLD = 6;
+	// Parameters
+	static final int DANGER_THRESHOLD = 8;
+	static final int BLOODTHIRST = 2;
+	static final int FEAR_OPPONENT = 5;
 
 	// ----FIELDS
 	// ------------------------------------------------------------
@@ -23,6 +26,7 @@ public class PlayerAI extends ClientAI {
 	@Override
 	public Move getMove(Gameboard gameboard, Opponent opponent, Player player)
 			throws NoItemException, MapOutOfBoundsException {
+
 		// ----Potential Field Update
 		potentialField.updatePotentialMap(gameboard, opponent, player);
 		for (int y = 0; y < gameboard.getHeight(); y++) {
@@ -32,104 +36,110 @@ public class PlayerAI extends ClientAI {
 			System.out.println();
 		}
 
+		// ----Create the move queue
+		PriorityQueue<WeightedMove> moveQueue = new PriorityQueue<>((m1, m2) -> (int) (m2.roi - m1.roi));
+
 		// ----Check Current Danger
 		int[][] potentialMap = potentialField.getPotentialMap();
 		int currentDanger = potentialMap[player.x][player.y];
-		if (currentDanger < DANGER_THRESHOLD) {
+		
+		//Add in some ROI for standing still
+		moveQueue.add(new WeightedMove(Move.NONE, (float)100 / currentDanger));
 
-			// ----Check for targets
-			// Check laser range
-			if (player.getLaserCount() > 0) {
-				for (Entry<Point, Integer> entry : InfluenceShapes.getTurretPattern(0).entrySet()) {
-					Point point = new Point(entry.getKey());
-					point.x = Utils.wrapCoord(point.x + player.x, gameboard.getWidth());
-					point.y = Utils.wrapCoord(point.y + player.y, gameboard.getHeight());
+		// ----Check for targets
+		// Check laser range
+		if (player.getLaserCount() > 0) {
+			for (Entry<Point, Integer> entry : InfluenceShapes.getTurretPattern(0).entrySet()) {
+				Point point = new Point(entry.getKey());
+				point.x = Utils.wrapCoord(point.x + player.x, gameboard.getWidth());
+				point.y = Utils.wrapCoord(point.y + player.y, gameboard.getHeight());
 
-					for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
-						if (obj instanceof Opponent) {
-							// Check for guaranteed hit
-							Opponent op = (Opponent) obj;
-							Point diff = Utils.directionToPoint(op.getDirection());
-							diff.translate(op.x - player.x, op.y - player.y);
-							if (diff.x == 0 || diff.y == 0) {
-								return Move.LASER;
-							}
+				for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
+					if (obj instanceof Opponent) {
+						// Check for guaranteed hit
+						Opponent op = (Opponent) obj;
+						Point diff = Utils.directionToPoint(op.getDirection());
+						diff.translate(op.x - player.x, op.y - player.y);
+						if (diff.x == 0 || diff.y == 0) {
+							return Move.LASER;
 						}
 					}
 				}
 			}
+		}
 
-			// Check regular shot range
-			for (int i = 1; i != 4; i++) {
-				Point point = Utils.directionToPoint(player.direction);
-				point.x = Utils.wrapCoord(point.x * i + player.x, gameboard.getWidth());
-				point.y = Utils.wrapCoord(point.y * i + player.y, gameboard.getHeight());
-				for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
-					if (obj instanceof Turret && !((Turret) obj).isDead()) {
-						return Move.SHOOT;
+		// Check regular shot
+		for (int i = 1; i != 4; i++) {
+			Point point = Utils.directionToPoint(player.direction);
+			point.x = Utils.wrapCoord(point.x * i + player.x, gameboard.getWidth());
+			point.y = Utils.wrapCoord(point.y * i + player.y, gameboard.getHeight());
+			for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
+				if (obj instanceof Wall) {
+					break;
+				} else if (obj instanceof Turret) {
+					Turret tur = (Turret) obj;
+					if (!tur.isDead()) {
+						float roi = ((float) TURRET_SCORE) / currentDanger;
+						moveQueue.add(new WeightedMove(Move.SHOOT, roi));
+					} else {
+						break;
 					}
-					if (obj instanceof Opponent) {
-						if (i <= 2) {
-							return Move.SHOOT;
-						}
-						Opponent op = (Opponent) obj;
-						Point diff = Utils.directionToPoint(op.getDirection());
-						diff.translate(op.x - player.x, op.y - player.y);
-						if ((diff.x == 0) == (point.x == 0) && (diff.y < 0) == (point.y < 0)) {
-							return Move.SHOOT;
-						}
-						if ((diff.y == 0) == (point.y == 0) && (diff.x < 0) == (point.x < 0)) {
-							return Move.SHOOT;
-						}
+				} else if (obj instanceof Opponent) {
+					Opponent op = (Opponent) obj;
+
+					// Check for guaranteed hits
+					Point diff = Utils.directionToPoint(op.getDirection());
+					diff.translate(op.x - player.x, op.y - player.y);
+					if ((diff.x == 0) == (point.x == 0) && (diff.y < 0) == (point.y < 0)) {
+						return Move.SHOOT;
+					} else if ((diff.y == 0) == (point.y == 0) && (diff.x < 0) == (point.x < 0)) {
+						moveQueue.add(new WeightedMove(Move.SHOOT, ((float) PLAYER_SCORE) / (currentDanger)));
+					} else {
+						int dist_factor = (i > 2) ? i : 0;
+						float roi = ((float) PLAYER_SCORE) / (currentDanger) / dist_factor;
+						moveQueue.add(new WeightedMove(Move.SHOOT, roi));
 					}
 				}
 			}
 		}
 
 		// ----Plan movement
-		// Get paths to the different powerups
-		Move next_move = Move.NONE;
+		// Get paths to the different objectives
+		Map<GameObjects, Integer> objectives = getObjectives(gameboard, player, opponent);
 
-		Map<GameObjects, Integer> objectives = getObjectives(gameboard, opponent);
-		if (objectives.size() > 0) {
-			float best_roi = 0;
-			Path shortest_path = null;
-			for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
-				try {
-					GameObjects obj = entry.getKey();
-					Path path = potentialField.getBestPath(gameboard, player, obj.x, obj.y);
-					float roi = (float) (getReward(obj)) / path.cost;
-					if (roi > best_roi) {
-						best_roi = roi;
-						shortest_path = path;
-					}
-				} catch (NoPathException e) {
-					e.printStackTrace();
-					continue;
-				}
-			}
+		for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
 			try {
-				System.out.println(player.x + ", " + player.y + ", " + player.direction.toString());
-				if (shortest_path != null) {
-					System.out.println(shortest_path.path);
-				}
-				next_move = getNextMove(gameboard, player, shortest_path.path.peek());
+				GameObjects obj = entry.getKey();
+				Path path = potentialField.getBestPath(gameboard, player, obj.x, obj.y);
+
+				float roi = ((float) getReward(obj)) / path.cost * 100;
+				Move first_move = getNextMove(gameboard, player, path.path.peek());
+
+				moveQueue.add(new WeightedMove(first_move, roi));
+
+			} catch (NoPathException e) {
+				e.printStackTrace();
+				continue;
 			} catch (BadMoveException e) {
 				e.printStackTrace();
+				continue;
 			}
 		}
-		return next_move;
+
+		// Return the move that leads to the best ROI
+		return moveQueue.peek().move;
 	}
 
-	private Map<GameObjects, Integer> getObjectives(Gameboard gameboard, Opponent opponent) {
+	private Map<GameObjects, Integer> getObjectives(Gameboard gameboard, Player player, Opponent opponent) {
 		Map<GameObjects, Integer> map = new HashMap<GameObjects, Integer>();
 		for (PowerUp pup : gameboard.getPowerUps()) {
 			map.put(pup, POWERUP_SCORE);
 		}
-		map.put(opponent, PLAYER_SCORE);
-		for (Turret tur : gameboard.getTurrets()) {
-			map.put(tur, TURRET_SCORE);
-		}
+		map.put(opponent,
+				PLAYER_SCORE + BLOODTHIRST * evaluateStrength(player) - FEAR_OPPONENT * evaluateStrength(opponent));
+
+		// Only care about live turrets
+		gameboard.getTurrets().stream().filter(t -> !t.isDead()).forEach(t -> map.put(t, TURRET_SCORE));
 		return map;
 	}
 
@@ -187,10 +197,26 @@ public class PlayerAI extends ClientAI {
 	private int evaluateStrength(Combatant comb) {
 		int strength = 0;
 
+		strength += comb.getHP() * 100;
 		strength += comb.getLaserCount() * 50;
 		strength += comb.getShieldCount() * 50;
 		strength += comb.isShieldActive() ? 100 : 0;
 
 		return strength;
+	}
+
+	private Point directionToPoint(Direction d) {
+		switch (d) {
+		case DOWN:
+			return new Point(0, 1);
+		case UP:
+			return new Point(0, -1);
+		case RIGHT:
+			return new Point(1, 0);
+		case LEFT:
+			return new Point(-1, 0);
+		default:
+			return new Point(0, 0);
+		}
 	}
 }
