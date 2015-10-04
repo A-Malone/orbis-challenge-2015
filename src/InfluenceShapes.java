@@ -64,4 +64,5 @@ public class InfluenceShapes {
 		}
 		return pattern;
 	}
+
 }

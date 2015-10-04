@@ -9,9 +9,11 @@ public class PlayerAI extends ClientAI {
 	static final int POWERUP_SCORE = 200;
 	static final int PLAYER_SCORE = 750;
 	static final int TURRET_SCORE = 500;
+	
+	static final int DANGER_THRESHOLD = 8;
 
-	// ----FIELDS
-	// ------------------------------------------------------------
+	//----FIELDS
+	//------------------------------------------------------------
 	private PotentialField potentialField;
 
 	public PlayerAI() {
@@ -22,9 +24,18 @@ public class PlayerAI extends ClientAI {
 	public Move getMove(Gameboard gameboard, Opponent opponent, Player player)
 			throws NoItemException, MapOutOfBoundsException {
 
-		// Update the potential field
+		//----Potential Field Update
 		potentialField.updatePotentialMap(gameboard, opponent, player);
-
+		
+		//----Check Current Danger	
+		int[][] potentialMap = potentialField.getPotentialMap();
+		int currentDanger = potentialMap[player.x][player.y];
+		
+		//----Check for targets
+		//Players
+		int player_score = 0;
+		
+		//----Plan movement
 		Move next_move = Move.FORWARD;
 
 		// Get paths to the different powerups
@@ -37,7 +48,6 @@ public class PlayerAI extends ClientAI {
 					GameObjects obj = entry.getKey();
 					Path path = potentialField.getBestPath(gameboard, player.x, player.y, obj.x, obj.y);
 					float roi = (float)(getReward(obj)) / path.cost;
-					System.out.println(getReward(obj) + " " + path.cost);
 					if (roi > best_roi) {
 						best_roi = roi;	
 						shortest_path = path;
@@ -82,6 +92,10 @@ public class PlayerAI extends ClientAI {
 		}
 	}
 
+	/** 
+	 * Extracts the Move object from the current position inside the 'player' object,
+	 * and the desired position 'pos'
+	 * */
 	private Move getNextMove(Player player, Point pos) throws BadMoveException {
 
 		// Get the positional differences
@@ -108,5 +122,18 @@ public class PlayerAI extends ClientAI {
 		} else {
 			return Direction.directionToMovement(nextDir);
 		}
+	}
+	
+	/** 
+	 * Heuristic estimate of combat strength 
+	 * */
+	private int evaluateStrength(Combatant comb){
+		int strength = 0;
+		
+		strength += comb.getLaserCount() * 50;
+		strength += comb.getShieldCount() * 50; 
+		strength += comb.isShieldActive() ? 100 : 0;
+		
+		return strength;
 	}
 }
