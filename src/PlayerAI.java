@@ -8,20 +8,14 @@ public class PlayerAI extends ClientAI {
 	//------------------------------------------------------------
 	static final int POWERUP_SCORE = 200;
 	static final int PLAYER_SCORE = 750;
-	static final int TURRET_SCORE = 750;
-	
-	//States
-	static final int FIND_POWER_UPS = 0;
-	static final int TERMINATOR = 1;
+	static final int TURRET_SCORE = 500;
 	
 	//----FIELDS
 	//------------------------------------------------------------
-	PotentialField potentialField;
-	int state;
+	private PotentialField potentialField;
 	
 	public PlayerAI() {
-		potentialField = new PotentialField();
-		state = FIND_POWER_UPS;
+		potentialField = new PotentialField();		
 	}
 
 	@Override
@@ -34,23 +28,25 @@ public class PlayerAI extends ClientAI {
 		Move next_move;
 		
 		//Get paths to the different powerups
-		ArrayList<PowerUp> powerUps = gameboard.getPowerUps();
-		if(powerUps.size() > 0){
-			int shortest_length = Integer.MAX_VALUE;
-			Queue<Point> shortest_path = null;
+		Map<GameObjects, Integer> objectives = getObjectives(gameboard, opponent);
+		if(objectives.size() > 0){
+			int best_roi = 0;
+			Path shortest_path;
 			
-			for(PowerUp pup : powerUps){
+			for(Entry<GameObjects, Integer> entry: objectives.entrySet()){
 				try {
-					Path path = potentialField.getBestPath(gameboard, player.x, player.y, pup.x, pup.y);
-					if (path.cost < shortest_length){
+					GameObjects obj = entry.getKey();
+					Path path = potentialField.getBestPath(gameboard, player.x, player.y, obj.x, obj.y);
+					int roi = getReward(obj) / path.cost;
+					if (roi > best_roi){
+						best_roi = roi;						
 						shortest_path = path.path;
 					}
 				} catch (NoPathException e) {
-					
+					continue;
 				}
 			}
-			//next_move = shortest_path.peek();
-			next_move = Move.FORWARD;
+			next_move = getNextMove(player, shortest_path.path.peek());
 		}
 		else
 		{
@@ -62,29 +58,60 @@ public class PlayerAI extends ClientAI {
 	private Map<GameObjects, Integer> getObjectives(Gameboard gameboard, Opponent opponent){
 		Map<GameObjects, Integer> map = new HashMap<GameObjects, Integer>();
 		for(PowerUp pup : gameboard.getPowerUps()){
-			map.put(pup, POWERUP_SCORE * objectiveWeight(pup));
+			map.put(pup, POWERUP_SCORE);
 		}
-		map.put(opponent, PLAYER_SCORE * objectiveWeight(opponent));
+		map.put(opponent, PLAYER_SCORE);
 		for(Turret tur : gameboard.getTurrets()){
-			map.put(tur, TURRET_SCORE * objectiveWeight(tur));
+			map.put(tur, TURRET_SCORE);
 		}
 		return map;
 	}
 	
-	private int objectiveWeight(GameObjects obj){
-		switch(state){
-		case FIND_POWER_UPS:
-			if(obj instanceof PowerUp){
-				return 2;
-			}
-			return 1;
-		case TERMINATOR:
-			if(obj instanceof Opponent){
-				return 2;
-			}
-			return 1;
-		default:
-			return 1;
+	private int getReward(GameObjects obj){		
+		if(obj instanceof PowerUp){
+			return POWERUP_SCORE;			
 		}
+		else if(obj instanceof Opponent){
+			return PLAYER_SCORE;			
+		}
+		else if(obj instanceof Turret){
+			return TURRET_SCORE;
+		}
+		else{
+			return 0;
+		}
+	}
+	
+	private Move getNextMove(Player player, Point pos) throws BadMoveException{
+		
+		//Get the positional differences
+		int dx = pos.x - player.x;
+		int dy = pos.y - player.y;
+		
+		//Calculate the next direction		
+		Direction nextDir;
+		if(dx==0 && dy==1){
+			nextDir = Direction.UP;
+		}
+		else if(dx==0 && dy==-1){
+			nextDir = Direction.DOWN;
+		}
+		else if(dx==1 && dy==0){
+			nextDir = Direction.RIGHT;
+		}
+		else if(dx==-1 && dy==0){
+			nextDir = Direction.LEFT;
+		}
+		else{
+			//Should never happen
+			throw new BadMoveException();
+		}		
+		
+		if(nextDir == player.direction){
+			return Move.FORWARD;
+		}
+		else{
+			return Direction.directionToMovement(nextDir);
+		}	
 	}
 }

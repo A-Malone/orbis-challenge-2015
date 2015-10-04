@@ -35,7 +35,7 @@ public class InfluenceShapes {
 		//Potential of getting turned on
 		pattern.put(new Point(-1, 0), 4);
 		pattern.put(new Point( 1, 0), 4);
-		pattern.put(new Point( 1,-1), 4);	
+		pattern.put(new Point( 1,-1), 4);
 		
 		return pattern;
 	}
