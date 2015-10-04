@@ -10,7 +10,7 @@ public class PlayerAI extends ClientAI {
 	static final int PLAYER_SCORE = 750;
 	static final int TURRET_SCORE = 500;
 	
-	static final int DANGER_THRESHOLD = 8;
+	static final int DANGER_THRESHOLD = 6;
 
 	//----FIELDS
 	//------------------------------------------------------------
@@ -25,8 +25,7 @@ public class PlayerAI extends ClientAI {
 			throws NoItemException, MapOutOfBoundsException {
 
 		//----Potential Field Update
-		potentialField.updatePotentialMap(gameboard, opponent, player);
-		// TODO print potential
+		potentialField.updatePotentialMap(gameboard, opponent, player);		
 		for (int y = 0; y < gameboard.getHeight(); y++) {
 			for (int x = 0; x < gameboard.getWidth(); x++) {
 				System.out.print(potentialField.getPotentialMap()[x][y] + " ");
@@ -34,19 +33,53 @@ public class PlayerAI extends ClientAI {
 			System.out.println();
 		}
 		
-		
 		//----Check Current Danger	
 		int[][] potentialMap = potentialField.getPotentialMap();
 		int currentDanger = potentialMap[player.x][player.y];
-		
-		//----Check for targets
-		//Players
-		
+		if(currentDanger < DANGER_THRESHOLD){
+			
+			//----Check for targets
+			//Check laser range
+			if(player.getLaserCount() > 0){
+				for(Entry<Point, Integer> entry : InfluenceShapes.getTurretPattern(0).entrySet()){
+					Point point = entry.getKey();
+					point.translate(
+						PotentialField.wrapCoord(player.x, gameboard.getWidth()),
+						PotentialField.wrapCoord(player.y, gameboard.getHeight())
+					);
+					for(GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)){
+						if(obj instanceof Opponent){
+							//Check for guaranteed hit
+							Opponent op = (Opponent)obj;
+							Point diff = directionToPoint(op.getDirection());
+							diff.translate(op.x-player.x, op.y-player.y);
+							if(diff.x==0 || diff.y==0){
+								return Move.SHOOT;
+							}
+						}
+					}
+				}
+			}
+			
+			//Check regular shot range
+			for(int i = 1; i!=4; i++){
+				Point point = directionToPoint(player.direction);
+				point.translate(
+					PotentialField.wrapCoord(point.x*i + player.x, gameboard.getWidth()), 
+					PotentialField.wrapCoord(point.y*i + player.y, gameboard.getHeight())
+				);
+				for(GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)){					
+					if(obj instanceof Turret){
+						return Move.SHOOT;
+					}
+				}
+			}
+		}
 		
 		//----Plan movement
-		Move next_move = Move.FORWARD;
-
 		// Get paths to the different powerups
+		Move next_move = Move.NONE;
+		
 		Map<GameObjects, Integer> objectives = getObjectives(gameboard, opponent);
 		if (objectives.size() > 0) {
 			float best_roi = 0;
@@ -66,6 +99,7 @@ public class PlayerAI extends ClientAI {
 				}
 			}
 			try {				
+				System.out.println(shortest_path.path);
 				next_move = getNextMove(gameboard, player, shortest_path.path.peek());
 			} catch (BadMoveException e) {
 				// TODO Auto-generated catch block
@@ -143,5 +177,21 @@ public class PlayerAI extends ClientAI {
 		strength += comb.isShieldActive() ? 100 : 0;
 		
 		return strength;
+	}
+	
+	
+	private Point directionToPoint(Direction d){
+		switch(d){
+		case DOWN:
+			return new Point(0,1);
+		case UP:
+			return new Point(0,-1);
+		case RIGHT:
+			return new Point(1,0);
+		case LEFT:
+			return new Point(-1,0);
+		default:
+			return new Point(0,0);
+		}
 	}
 }
