@@ -1,5 +1,5 @@
 {
-	"numberOfAIPlayers": "2",
+	"numberOfAIPlayers": "1",
 	"renderGUI": "true",
 	"mapName": "Map1.json",
 	"swapAIPlayers": "false",

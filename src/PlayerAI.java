@@ -10,11 +10,14 @@ public class PlayerAI extends ClientAI {
 	static final int PLAYER_SCORE = 750;
 	static final int TURRET_SCORE = 500;
 
+	// Parameters
 	static final int DANGER_THRESHOLD = 6;
+	static final int BLOODTHIRST = 2;
+	static final int FEAR_OPPONENT = 5;
 
 	// ----FIELDS
 	// ------------------------------------------------------------
-	private PotentialField potentialField;
+	private PotentialField potentialField;	
 
 	public PlayerAI() {
 		potentialField = new PotentialField();
@@ -32,6 +35,9 @@ public class PlayerAI extends ClientAI {
 			}
 			System.out.println();
 		}
+		
+		// ----Create the move queue
+		PriorityQueue<WeightedMove> moveQueue = new PriorityQueue<>((m1, m2)->(int)(m2.roi-m1.roi));
 
 		// ----Check Current Danger
 		int[][] potentialMap = potentialField.getPotentialMap();
@@ -60,27 +66,35 @@ public class PlayerAI extends ClientAI {
 				}
 			}
 
-			// Check regular shot range
+			// Check regular shot
 			for (int i = 1; i != 4; i++) {
 				Point point = directionToPoint(player.direction);
 				point.x = PotentialField.wrapCoord(point.x * i + player.x, gameboard.getWidth());
 				point.y = PotentialField.wrapCoord(point.y * i + player.y, gameboard.getHeight());
 				for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
 					if (obj instanceof Turret) {
-						return Move.SHOOT;
+						Turret tur = (Turret) obj;
+						if (!tur.isDead()) {
+							float roi = ((float)TURRET_SCORE) / currentDanger;
+							moveQueue.add(new WeightedMove(Move.SHOOT, roi));
+						}
 					}
 					if (obj instanceof Opponent) {
-						if (i <= 2) {
-							return Move.SHOOT;
-						}
 						Opponent op = (Opponent) obj;
+						
+						//Check for guaranteed hits
 						Point diff = directionToPoint(op.getDirection());
 						diff.translate(op.x - player.x, op.y - player.y);
 						if ((diff.x == 0) == (point.x == 0) && (diff.y < 0) == (point.y < 0)) {
 							return Move.SHOOT;
 						}
-						if ((diff.y == 0) == (point.y == 0) && (diff.x < 0) == (point.x < 0)) {
-							return Move.SHOOT;
+						else if ((diff.y == 0) == (point.y == 0) && (diff.x < 0) == (point.x < 0)) {							
+							moveQueue.add(new WeightedMove(Move.SHOOT, ((float)PLAYER_SCORE) / (currentDanger)));
+						}	
+						else {
+							int dist_factor = (i > 2) ? i : 0;
+							float roi = ((float)PLAYER_SCORE) / (currentDanger) / dist_factor;
+							moveQueue.add(new WeightedMove(Move.SHOOT, roi));
 						}
 					}
 				}
@@ -88,50 +102,45 @@ public class PlayerAI extends ClientAI {
 		}
 
 		// ----Plan movement
-		// Get paths to the different powerups
-		Move next_move = Move.NONE;
-
-		Map<GameObjects, Integer> objectives = getObjectives(gameboard, opponent);
-		if (objectives.size() > 0) {
-			float best_roi = 0;
-			Path shortest_path = null;
-			for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
-				try {
-					GameObjects obj = entry.getKey();
-					Path path = potentialField.getBestPath(gameboard, player, player.x, player.y, obj.x, obj.y);
-					float roi = (float) (getReward(obj)) / path.cost;
-					if (roi > best_roi) {
-						best_roi = roi;
-						shortest_path = path;
-					}
-				} catch (NoPathException e) {
-					e.printStackTrace();
-					continue;
-				}
-			}
+		// Get paths to the different objectives
+		Map<GameObjects, Integer> objectives = getObjectives(gameboard, player, opponent);
+				
+		for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
 			try {
-				System.out.println(player.x + ", " + player.y + ", " + player.direction.toString());
-				if (shortest_path != null) {
-					System.out.println(shortest_path.path);
-				}
-				next_move = getNextMove(gameboard, player, shortest_path.path.peek());
-			} catch (BadMoveException e) {
-				// TODO Auto-generated catch block
+				GameObjects obj = entry.getKey();
+				Path path = potentialField.getBestPath(gameboard, player, player.x, player.y, obj.x, obj.y);
+				
+				float roi =  ((float)getReward(obj)) / path.cost * 100;
+				Move first_move = getNextMove(gameboard, player, path.path.peek());
+				
+				moveQueue.add(new WeightedMove(first_move, roi));
+								
+			} catch (NoPathException e) {
 				e.printStackTrace();
+				continue;				
+			} catch (BadMoveException e) {
+				e.printStackTrace();
+				continue;
 			}
 		}
-		return next_move;
+		
+		
+		//Return the move that leads to the best ROI
+		return moveQueue.peek().move;
 	}
 
-	private Map<GameObjects, Integer> getObjectives(Gameboard gameboard, Opponent opponent) {
+	private Map<GameObjects, Integer> getObjectives(Gameboard gameboard, Player player, Opponent opponent) {
 		Map<GameObjects, Integer> map = new HashMap<GameObjects, Integer>();
 		for (PowerUp pup : gameboard.getPowerUps()) {
 			map.put(pup, POWERUP_SCORE);
 		}
-		map.put(opponent, PLAYER_SCORE);
-		for (Turret tur : gameboard.getTurrets()) {
-			map.put(tur, TURRET_SCORE);
-		}
+		map.put(opponent,
+				PLAYER_SCORE
+				+ BLOODTHIRST * evaluateStrength(player) 
+				- FEAR_OPPONENT * evaluateStrength(opponent));
+		
+		//Only care about live turrets
+		gameboard.getTurrets().stream().filter(t -> !t.isDead()).forEach(t -> map.put(t, TURRET_SCORE));
 		return map;
 	}
 
@@ -164,7 +173,7 @@ public class PlayerAI extends ClientAI {
 			return Direction.LEFT;
 		} else {
 			// Should never happen
-			System.err.println(fromX + ", " + fromY + " -> " + toX + ", " + toY + " is " + dx + ", " + dy);
+			System.err.println(fromX + ", " + fromY + " -> " + toX + ", " + toY + " is " + dx + ", " + dy);			
 			throw new BadMoveException();
 		}
 	}
@@ -189,9 +198,11 @@ public class PlayerAI extends ClientAI {
 	private int evaluateStrength(Combatant comb) {
 		int strength = 0;
 
+		strength += comb.getHP() * 100;
 		strength += comb.getLaserCount() * 50;
 		strength += comb.getShieldCount() * 50;
 		strength += comb.isShieldActive() ? 100 : 0;
+		
 
 		return strength;
 	}
