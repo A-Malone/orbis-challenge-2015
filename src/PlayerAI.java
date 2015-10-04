@@ -29,12 +29,12 @@ public class PlayerAI extends ClientAI {
 
 		// ----Potential Field Update
 		potentialField.updatePotentialMap(gameboard, opponent, player);
-		for (int y = 0; y < gameboard.getHeight(); y++) {
-			for (int x = 0; x < gameboard.getWidth(); x++) {
-				System.out.print(potentialField.getPotentialMap()[x][y] + " ");
-			}
-			System.out.println();
-		}
+//		for (int y = 0; y < gameboard.getHeight(); y++) {
+//			for (int x = 0; x < gameboard.getWidth(); x++) {
+//				System.out.print(potentialField.getPotentialMap()[x][y] + " ");
+//			}
+//			System.out.println();
+//		}
 
 		// ----Create the move queue
 		PriorityQueue<WeightedMove> moveQueue = new PriorityQueue<>((m1, m2) -> (int) (m2.roi - m1.roi));
@@ -133,7 +133,7 @@ public class PlayerAI extends ClientAI {
 		}
 
 		// Return the move that leads to the best ROI
-		System.out.println(moveQueue);
+//		System.out.println(moveQueue);
 		return moveQueue.peek().move;
 	}
 
