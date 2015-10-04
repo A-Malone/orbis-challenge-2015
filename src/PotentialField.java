@@ -87,10 +87,11 @@ public class PotentialField {
 			return n1.heuristicCost - n2.heuristicCost;
 		});
 		openSet.add(allNodes[startX][startY]);
+		allNodes[startX][startY].distanceFromStart = 0;
 		Set<Node> closedSet = new HashSet<>();
 		// If we can't make it to our destination in less than maxDistance
 		// steps, there is a wall in the way
-		int maxDistance = manDistance(gameboard, startX, startY, finishX, finishY) + 5;
+		int maxDistance = manDistance(gameboard, startX, startY, finishX, finishY);
 		while (!openSet.isEmpty()) {
 			Node current = openSet.poll();
 			// Took too long to get to finish
@@ -154,10 +155,10 @@ public class PotentialField {
 			for (Entry<Point, Integer> s : shape.entrySet()) {
 				Point p = s.getKey();
 				Integer v = s.getValue();
-				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
-					// Transform
-					int x = wrapCoord(ix + p.x, gameboard.getWidth());
-					int y = wrapCoord(iy - p.y, gameboard.getHeight());
+				// Transform
+				int x = wrapCoord(ix + p.x, gameboard.getWidth());
+				int y = wrapCoord(iy - p.y, gameboard.getHeight());
+				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
 				}
@@ -167,10 +168,10 @@ public class PotentialField {
 			for (Entry<Point, Integer> s : shape.entrySet()) {
 				Point p = s.getKey();
 				Integer v = s.getValue();
-				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
-					// Transform
-					int x = wrapCoord(ix - p.y, gameboard.getWidth());
-					int y = wrapCoord(iy + p.x, gameboard.getHeight());
+				// Transform
+				int x = wrapCoord(ix - p.y, gameboard.getWidth());
+				int y = wrapCoord(iy + p.x, gameboard.getHeight());
+				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
 				}
@@ -180,10 +181,10 @@ public class PotentialField {
 			for (Entry<Point, Integer> s : shape.entrySet()) {
 				Point p = s.getKey();
 				Integer v = s.getValue();
-				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
-					// Transform
-					int x = wrapCoord(ix + p.y, gameboard.getWidth());
-					int y = wrapCoord(iy + p.x, gameboard.getHeight());
+				// Transform
+				int x = wrapCoord(ix + p.y, gameboard.getWidth());
+				int y = wrapCoord(iy + p.x, gameboard.getHeight());
+				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
 				}
@@ -193,10 +194,10 @@ public class PotentialField {
 			for (Entry<Point, Integer> s : shape.entrySet()) {
 				Point p = s.getKey();
 				Integer v = s.getValue();
-				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
-					// Transform
-					int x = wrapCoord(ix + p.x, gameboard.getWidth());
-					int y = wrapCoord(iy + p.y, gameboard.getHeight());
+				// Transform
+				int x = wrapCoord(ix + p.x, gameboard.getWidth());
+				int y = wrapCoord(iy + p.y, gameboard.getHeight());
+				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
 				}
@@ -220,10 +221,14 @@ public class PotentialField {
 		return c;
 	}
 
-	public int manDistance(Gameboard gameboard, double x, double y, double x2, double y2) {
-		int dx = (int) (Math.abs(x2 - x));
-		int dy = (int) (Math.abs(y2 - y));
-		return Math.min(dx, Math.abs(dx - gameboard.getWidth() / 2))
-				+ Math.min(dy, Math.abs(dy - gameboard.getHeight() / 2));
+	public static int wrapDistance(int x1, int x2, int max) {
+		int dx = Math.abs(x1 - x2);
+		return Math.min(dx, Math.abs(dx - max));
+	}
+
+	public int manDistance(Gameboard gameboard, int x, int y, int x2, int y2) {
+		int dx = wrapDistance(x, x2, gameboard.getWidth());
+		int dy = wrapDistance(y, y2, gameboard.getHeight());
+		return dx + dy;
 	}
 }

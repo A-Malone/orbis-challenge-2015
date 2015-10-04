@@ -20,9 +20,8 @@ public class InfluenceShapes {
 		bulletPattern.put(new Point(2, 1), 2);
 		bulletPattern.put(new Point(-2, 1), 2);
 
-		playerPattern = new HashMap<Point, Integer>();
 		// Potential of being imminently shot at
-		playerPattern = getBulletPattern();
+		playerPattern = new HashMap<Point, Integer>(getBulletPattern());
 		// Longshots
 		playerPattern.put(new Point(0, 5), 2);
 		playerPattern.put(new Point(0, 6), 2);

@@ -26,6 +26,14 @@ public class PlayerAI extends ClientAI {
 
 		//----Potential Field Update
 		potentialField.updatePotentialMap(gameboard, opponent, player);
+		// TODO print potential
+		for (int y = 0; y < gameboard.getHeight(); y++) {
+			for (int x = 0; x < gameboard.getWidth(); x++) {
+				System.out.print(potentialField.getPotentialMap()[x][y] + " ");
+			}
+			System.out.println();
+		}
+		
 		
 		//----Check Current Danger	
 		int[][] potentialMap = potentialField.getPotentialMap();
@@ -58,7 +66,7 @@ public class PlayerAI extends ClientAI {
 				}
 			}
 			try {				
-				next_move = getNextMove(player, shortest_path.path.peek());
+				next_move = getNextMove(gameboard, player, shortest_path.path.peek());
 			} catch (BadMoveException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -86,8 +94,7 @@ public class PlayerAI extends ClientAI {
 			return PLAYER_SCORE;
 		} else if (obj instanceof Turret) {
 			return TURRET_SCORE;
-		} else {
-			System.out.println("NO TYPE??");
+		} else {			
 			return 0;
 		}
 	}
@@ -96,24 +103,25 @@ public class PlayerAI extends ClientAI {
 	 * Extracts the Move object from the current position inside the 'player' object,
 	 * and the desired position 'pos'
 	 * */
-	private Move getNextMove(Player player, Point pos) throws BadMoveException {
+	private Move getNextMove(Gameboard gameboard, Player player, Point pos) throws BadMoveException {
 
 		// Get the positional differences
-		int dx = pos.x - player.x;
-		int dy = pos.y - player.y;
+		int dx = PotentialField.wrapDistance(pos.x, player.x, gameboard.getWidth());
+		int dy = PotentialField.wrapDistance(pos.y, player.y, gameboard.getHeight());
 
 		// Calculate the next direction
 		Direction nextDir;
 		if (dx == 0 && dy == 1) {
-			nextDir = Direction.UP;
-		} else if (dx == 0 && dy == -1) {
 			nextDir = Direction.DOWN;
+		} else if (dx == 0 && dy == -1) {
+			nextDir = Direction.UP;
 		} else if (dx == 1 && dy == 0) {
 			nextDir = Direction.RIGHT;
 		} else if (dx == -1 && dy == 0) {
 			nextDir = Direction.LEFT;
 		} else {
 			// Should never happen
+			System.err.println(player.x + ", " + player.y + " -> " + pos.x + ", " + pos.y);
 			throw new BadMoveException();
 		}
 
