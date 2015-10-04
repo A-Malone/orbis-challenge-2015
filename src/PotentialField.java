@@ -26,6 +26,7 @@ public class PotentialField {
 			return n1.heuristicCost - n2.heuristicCost;
 		});
 		openSet.add(allNodes[finishX][finishY]);
+		allNodes[finishX][finishY].distanceFromStart = 0;
 		Set<Node> closedSet = new HashSet<>();
 		while (!openSet.isEmpty()) {
 			Node current = openSet.poll();

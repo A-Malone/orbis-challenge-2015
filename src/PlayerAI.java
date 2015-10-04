@@ -30,22 +30,24 @@ public class PlayerAI extends ClientAI {
 		// Get paths to the different powerups
 		Map<GameObjects, Integer> objectives = getObjectives(gameboard, opponent);
 		if (objectives.size() > 0) {
-			int best_roi = 0;
-			Path shortest_path = new Path(new ArrayDeque<Point>(), Integer.MAX_VALUE);
+			float best_roi = 0;
+			Path shortest_path = null;
 			for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
-				try {
+				try {					
 					GameObjects obj = entry.getKey();
 					Path path = potentialField.getBestPath(gameboard, player.x, player.y, obj.x, obj.y);
-					int roi = getReward(obj) / path.cost;
+					float roi = (float)(getReward(obj)) / path.cost;
+					System.out.println(getReward(obj) + " " + path.cost);
 					if (roi > best_roi) {
-						best_roi = roi;
+						best_roi = roi;	
 						shortest_path = path;
 					}
 				} catch (NoPathException e) {
+					e.printStackTrace();
 					continue;
 				}
 			}
-			try {
+			try {				
 				next_move = getNextMove(player, shortest_path.path.peek());
 			} catch (BadMoveException e) {
 				// TODO Auto-generated catch block
@@ -75,6 +77,7 @@ public class PlayerAI extends ClientAI {
 		} else if (obj instanceof Turret) {
 			return TURRET_SCORE;
 		} else {
+			System.out.println("NO TYPE??");
 			return 0;
 		}
 	}
