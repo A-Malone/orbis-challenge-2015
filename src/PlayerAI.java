@@ -21,9 +21,15 @@ public class PlayerAI extends ClientAI {
 	@Override
 	public Move getMove(Gameboard gameboard, Opponent opponent, Player player)
 			throws NoItemException, MapOutOfBoundsException {
-
 		// Update the potential field
 		potentialField.updatePotentialMap(gameboard, opponent, player);
+		// TODO print potential
+		for (int y = 0; y < gameboard.getHeight(); y++) {
+			for (int x = 0; x < gameboard.getWidth(); x++) {
+				System.out.print(potentialField.getPotentialMap()[x][y] + " ");
+			}
+			System.out.println();
+		}
 
 		Move next_move = Move.FORWARD;
 
@@ -33,13 +39,12 @@ public class PlayerAI extends ClientAI {
 			float best_roi = 0;
 			Path shortest_path = null;
 			for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
-				try {					
+				try {
 					GameObjects obj = entry.getKey();
 					Path path = potentialField.getBestPath(gameboard, player.x, player.y, obj.x, obj.y);
-					float roi = (float)(getReward(obj)) / path.cost;
-					System.out.println(getReward(obj) + " " + path.cost);
+					float roi = (float) (getReward(obj)) / path.cost;
 					if (roi > best_roi) {
-						best_roi = roi;	
+						best_roi = roi;
 						shortest_path = path;
 					}
 				} catch (NoPathException e) {
@@ -47,8 +52,9 @@ public class PlayerAI extends ClientAI {
 					continue;
 				}
 			}
-			try {				
-				next_move = getNextMove(player, shortest_path.path.peek());
+			try {
+				next_move = getNextMove(gameboard, player, shortest_path.path.peek());
+				System.out.println(shortest_path.path);
 			} catch (BadMoveException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -73,33 +79,33 @@ public class PlayerAI extends ClientAI {
 		if (obj instanceof PowerUp) {
 			return POWERUP_SCORE;
 		} else if (obj instanceof Opponent) {
-			return PLAYER_SCORE;
+			return PLAYER_SCORE / 1000;
 		} else if (obj instanceof Turret) {
-			return TURRET_SCORE;
+			return TURRET_SCORE / 300;
 		} else {
-			System.out.println("NO TYPE??");
+			System.err.println("NO TYPE??");
 			return 0;
 		}
 	}
 
-	private Move getNextMove(Player player, Point pos) throws BadMoveException {
-
+	private Move getNextMove(Gameboard gameboard, Player player, Point pos) throws BadMoveException {
 		// Get the positional differences
-		int dx = pos.x - player.x;
-		int dy = pos.y - player.y;
+		int dx = PotentialField.wrapDistance(pos.x, player.x, gameboard.getWidth());
+		int dy = PotentialField.wrapDistance(pos.y, player.y, gameboard.getHeight());
 
 		// Calculate the next direction
 		Direction nextDir;
 		if (dx == 0 && dy == 1) {
-			nextDir = Direction.UP;
-		} else if (dx == 0 && dy == -1) {
 			nextDir = Direction.DOWN;
+		} else if (dx == 0 && dy == -1) {
+			nextDir = Direction.UP;
 		} else if (dx == 1 && dy == 0) {
 			nextDir = Direction.RIGHT;
 		} else if (dx == -1 && dy == 0) {
 			nextDir = Direction.LEFT;
 		} else {
 			// Should never happen
+			System.err.println(player.x + ", " + player.y + " -> " + pos.x + ", " + pos.y);
 			throw new BadMoveException();
 		}
 
