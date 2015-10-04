@@ -3,55 +3,62 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class InfluenceShapes {
+	private static Map<Point, Integer> bulletPattern;
+	private static Map<Point, Integer> playerPattern;
+	private static Map<Point, Integer> playerWithLaserPattern;
+
+	static {
+		bulletPattern = new HashMap<Point, Integer>();
+		// Forward line
+		bulletPattern.put(new Point(0, 1), 10);
+		bulletPattern.put(new Point(0, 2), 9);
+		bulletPattern.put(new Point(0, 3), 6);
+		bulletPattern.put(new Point(0, 4), 4);
+		// Side threats
+		bulletPattern.put(new Point(1, 1), 4);
+		bulletPattern.put(new Point(-1, 1), 4);
+		bulletPattern.put(new Point(2, 1), 2);
+		bulletPattern.put(new Point(-2, 1), 2);
+
+		playerPattern = new HashMap<Point, Integer>();
+		// Potential of being imminently shot at
+		playerPattern = getBulletPattern();
+		// Longshots
+		playerPattern.put(new Point(0, 5), 2);
+		playerPattern.put(new Point(0, 6), 2);
+		playerPattern.put(new Point(0, 7), 1);
+		// Potential of getting turned on
+		playerPattern.put(new Point(-1, 0), 4);
+		playerPattern.put(new Point(1, 0), 4);
+		playerPattern.put(new Point(1, -1), 4);
+
+		playerWithLaserPattern = new HashMap<Point, Integer>(playerPattern);
+		getTurretPattern(0).forEach((k, v) -> playerWithLaserPattern.merge(k, v, (v1, v2) -> v1 + v2));
+	}
+
 	public static Map<Point, Integer> getBulletPattern() {
-		Map<Point, Integer> pattern = new HashMap<Point, Integer>();
-		
-		//Forward line
-		pattern.put(new Point(0,1), 10);
-		pattern.put(new Point(0,2), 9);
-		pattern.put(new Point(0,3), 6);
-		pattern.put(new Point(0,4), 4);
-		
-		//Side threats
-		pattern.put(new Point( 1,1), 4);
-		pattern.put(new Point(-1,1), 4);
-		pattern.put(new Point( 2,1), 2);
-		pattern.put(new Point(-2,1), 2);
-		
-		return pattern;
+		return bulletPattern;
 	}
-	
-	public static Map<Point, Integer> getPlayerPattern() {
-		Map<Point, Integer> pattern = new HashMap<Point, Integer>();
-		
-		//Potential of being imminently shot at
-		pattern = getBulletPattern();
-		
-		//Longshots
-		pattern.put(new Point( 0, 5), 2);
-		pattern.put(new Point( 0, 6), 2);
-		pattern.put(new Point( 0, 7), 1);
-		
-		//Potential of getting turned on
-		pattern.put(new Point(-1, 0), 4);
-		pattern.put(new Point( 1, 0), 4);
-		pattern.put(new Point( 1,-1), 4);	
-		
-		return pattern;
+
+	public static Map<Point, Integer> getPlayerPattern(boolean hasLaser) {
+		if (hasLaser) {
+			return playerWithLaserPattern;
+		}
+		return playerPattern;
 	}
-	
+
 	public static Map<Point, Integer> getTurretPattern(int frames_to_fire) {
 		Map<Point, Integer> pattern = new HashMap<Point, Integer>();
-		
-		int threat = 10-frames_to_fire*2;
-		if(threat<0){threat = 0;}		
-		
-		int[] directions = {-1, 1};
-		for(int i : directions){
-			for(int x = i; x != 4*i + i; x+=i){
+		int threat = 10 - frames_to_fire * 2;
+		if (threat < 0) {
+			threat = 0;
+		}
+		int[] directions = { -1, 1 };
+		for (int i : directions) {
+			for (int x = i; x != 4 * i + i; x += i) {
 				pattern.put(new Point(x, 0), threat);
 			}
-			for(int y = i; y != 4*i + i; y+=i){
+			for (int y = i; y != 4 * i + i; y += i) {
 				pattern.put(new Point(0, y), threat);
 			}
 		}

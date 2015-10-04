@@ -132,92 +132,77 @@ public class PotentialField {
 			throws MapOutOfBoundsException {
 		pmap = new int[gameboard.getWidth()][gameboard.getHeight()];
 
-		// Me
-		pmap[player.getX()][player.getY()] = 10000;
 		// Opponent
-		pmap[opponent.getX()][opponent.getY()] = -10000;
+		applyInfluenceShape(gameboard, pmap, opponent.x, opponent.y, opponent.direction,
+				InfluenceShapes.getPlayerPattern(opponent.getLaserCount() > 0));
 		// Bullets
-		Map<Point, Integer> bulletShape = new HashMap<>();
-		bulletShape.put(new Point(0, 1), 2);
-		bulletShape.put(new Point(0, 2), 1);
 		for (Bullet b : gameboard.getBullets()) {
-			switch (b.getDirection()) {
-			case DOWN:
-				for (Entry<Point, Integer> s : bulletShape.entrySet()) {
-					Point p = s.getKey();
-					Integer v = s.getValue();
-					if (!checkForWall(gameboard, b.x, b.y, p.x, p.y)) {
-						// Transform
-						int x = wrapCoord(b.x + p.x, gameboard.getWidth());
-						int y = wrapCoord(b.y - p.y, gameboard.getHeight());
-						// Add value
-						pmap[x][y] += v;
-					}
-				}
-				break;
-			case LEFT:
-				for (Entry<Point, Integer> s : bulletShape.entrySet()) {
-					Point p = s.getKey();
-					Integer v = s.getValue();
-					if (!checkForWall(gameboard, b.x, b.y, p.x, p.y)) {
-						// Transform
-						int x = wrapCoord(b.x - p.y, gameboard.getWidth());
-						int y = wrapCoord(b.y + p.x, gameboard.getHeight());
-						// Add value
-						pmap[x][y] += v;
-					}
-				}
-				break;
-			case RIGHT:
-				for (Entry<Point, Integer> s : bulletShape.entrySet()) {
-					Point p = s.getKey();
-					Integer v = s.getValue();
-					if (!checkForWall(gameboard, b.x, b.y, p.x, p.y)) {
-						// Transform
-						int x = wrapCoord(b.x + p.y, gameboard.getWidth());
-						int y = wrapCoord(b.y + p.x, gameboard.getHeight());
-						// Add value
-						pmap[x][y] += v;
-					}
-				}
-				break;
-			case UP:
-				for (Entry<Point, Integer> s : bulletShape.entrySet()) {
-					Point p = s.getKey();
-					Integer v = s.getValue();
-					if (!checkForWall(gameboard, b.x, b.y, p.x, p.y)) {
-						// Transform
-						int x = wrapCoord(b.x + p.x, gameboard.getWidth());
-						int y = wrapCoord(b.y + p.y, gameboard.getHeight());
-						// Add value
-						pmap[x][y] += v;
-					}
-				}
-				break;
-			default:
-				throw new MapOutOfBoundsException("Impossible bullet direction!");
-			}
+			applyInfluenceShape(gameboard, pmap, b.x, b.y, b.direction, InfluenceShapes.getBulletPattern());
 		}
 		// Turrets
-		Map<Point, Integer> turretShape = new HashMap<>();
-		for (int dx = -4; dx < 4; dx++) {
-			turretShape.put(new Point(dx, 0), 3);
-		}
-		for (int dy = -4; dy < 4; dy++) {
-			turretShape.put(new Point(0, dy), 3);
-		}
 		for (Turret t : gameboard.getTurrets()) {
-			if (t.isFiringNextTurn()) {
-				for (Entry<Point, Integer> s : turretShape.entrySet()) {
-					Point p = s.getKey();
-					Integer v = s.getValue();
+			int timeToFire = (gameboard.getCurrentTurnNumber() % (t.getFireTime() + t.getCooldownTime())) - 1;
+			applyInfluenceShape(gameboard, pmap, t.x, t.y, Direction.UP, InfluenceShapes.getTurretPattern(timeToFire));
+		}
+	}
+
+	private void applyInfluenceShape(Gameboard gameboard, int[][] pmap, int ix, int iy, Direction direction,
+			Map<Point, Integer> shape) throws MapOutOfBoundsException {
+		switch (direction) {
+		case DOWN:
+			for (Entry<Point, Integer> s : shape.entrySet()) {
+				Point p = s.getKey();
+				Integer v = s.getValue();
+				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
 					// Transform
-					int x = wrapCoord(t.getX() + (int) p.getX(), gameboard.getWidth());
-					int y = wrapCoord(t.getY() + (int) p.getY(), gameboard.getHeight());
+					int x = wrapCoord(ix + p.x, gameboard.getWidth());
+					int y = wrapCoord(iy - p.y, gameboard.getHeight());
 					// Add value
 					pmap[x][y] += v;
 				}
 			}
+			break;
+		case LEFT:
+			for (Entry<Point, Integer> s : shape.entrySet()) {
+				Point p = s.getKey();
+				Integer v = s.getValue();
+				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
+					// Transform
+					int x = wrapCoord(ix - p.y, gameboard.getWidth());
+					int y = wrapCoord(iy + p.x, gameboard.getHeight());
+					// Add value
+					pmap[x][y] += v;
+				}
+			}
+			break;
+		case RIGHT:
+			for (Entry<Point, Integer> s : shape.entrySet()) {
+				Point p = s.getKey();
+				Integer v = s.getValue();
+				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
+					// Transform
+					int x = wrapCoord(ix + p.y, gameboard.getWidth());
+					int y = wrapCoord(iy + p.x, gameboard.getHeight());
+					// Add value
+					pmap[x][y] += v;
+				}
+			}
+			break;
+		case UP:
+			for (Entry<Point, Integer> s : shape.entrySet()) {
+				Point p = s.getKey();
+				Integer v = s.getValue();
+				if (!checkForWall(gameboard, ix, iy, p.x, p.y)) {
+					// Transform
+					int x = wrapCoord(ix + p.x, gameboard.getWidth());
+					int y = wrapCoord(iy + p.y, gameboard.getHeight());
+					// Add value
+					pmap[x][y] += v;
+				}
+			}
+			break;
+		default:
+			throw new MapOutOfBoundsException("Impossible direction!");
 		}
 	}
 
