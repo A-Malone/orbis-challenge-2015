@@ -1,5 +1,7 @@
 import java.awt.Point;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +14,7 @@ import java.util.Map.Entry;
 public class PotentialField {
 	private int[][] pmap;
 
-	public Queue<Point> getBestPath(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
+	public Path getBestPath(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
 			throws NoPathException, MapOutOfBoundsException {
 		Node[][] allNodes = new Node[gameboard.getWidth()][gameboard.getHeight()];
 		for (int x = 0; x < gameboard.getWidth(); x++) {
@@ -25,14 +27,11 @@ public class PotentialField {
 		});
 		openSet.add(allNodes[finishX][finishY]);
 		Set<Node> closedSet = new HashSet<>();
-		// If we can't make it to our destination in less than maxDistance
-		// steps, there is a wall in the way
-		int maxDistance = manDistance(gameboard, startX, startY, finishX, finishY) + 5;
-		for (int i = 0; i < maxDistance && !openSet.isEmpty(); i++) {
+		while (!openSet.isEmpty()) {
 			Node current = openSet.poll();
 			// Finish
-			if (current.x == finishX && current.y == finishY) {
-				return rebuildPath(allNodes, finishX, finishY);
+			if (current.x == startX && current.y == startY) {
+				return rebuildPath(allNodes, startX, startY, finishX, finishY);
 			}
 			closedSet.add(current);
 			// Neighbors
@@ -40,18 +39,28 @@ public class PotentialField {
 				if (closedSet.contains(n) || gameboard.isWallAtTile(n.x, n.y) || gameboard.isTurretAtTile(n.x, n.y)) {
 					continue;
 				}
-				int tentative_g_score = current.distanceFromStart + 1;
-				n.distanceFromStart = tentative_g_score;
-				n.heuristicCost = n.distanceFromStart + manDistance(gameboard, n.x, n.y, finishX, finishY);
-				openSet.add(n);
+				int tentative_g_score = current.distanceFromStart + pmap[current.x][current.y] + 1;
+				if (tentative_g_score < n.distanceFromStart) {
+					n.parent = current;
+					n.distanceFromStart = tentative_g_score;
+					n.heuristicCost = n.distanceFromStart + manDistance(gameboard, n.x, n.y, finishX, finishY);
+					openSet.add(n);
+				}
 			}
 		}
 		throw new NoPathException();
 	}
 
-	private Queue<Point> rebuildPath(Node[][] allNodes, int finishX, int finishY) {
-		// TODO Auto-generated method stub
-		return null;
+	private Path rebuildPath(Node[][] allNodes, int startX, int startY, int finishX, int finishY) {
+		Deque<Point> path = new ArrayDeque<>();
+		Node current = allNodes[startX][startY];
+		while (current.x != finishX || current.y != finishY) {
+			// Go to next one
+			current = current.parent;
+			// Push it into the path
+			path.add(new Point(current.x, current.y));
+		}
+		return new Path(path, allNodes[startX][startY].distanceFromStart);
 	}
 
 	private boolean checkForWall(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
@@ -70,10 +79,14 @@ public class PotentialField {
 		// If we can't make it to our destination in less than maxDistance
 		// steps, there is a wall in the way
 		int maxDistance = manDistance(gameboard, startX, startY, finishX, finishY) + 5;
-		for (int i = 0; i < maxDistance && !openSet.isEmpty(); i++) {
+		while (!openSet.isEmpty()) {
 			Node current = openSet.poll();
-			// Finish
-			if (current.x == finishX && current.y == finishY) {
+			// Took too long to get to finish
+			if (current.distanceFromStart > maxDistance) {
+				return true;
+			}
+			// Success
+			else if (current.x == finishX && current.y == finishY) {
 				return false;
 			}
 			closedSet.add(current);
