@@ -43,14 +43,14 @@ public class PlayerAI extends ClientAI {
 			if (player.getLaserCount() > 0) {
 				for (Entry<Point, Integer> entry : InfluenceShapes.getTurretPattern(0).entrySet()) {
 					Point point = new Point(entry.getKey());
-					point.x = PotentialField.wrapCoord(point.x + player.x, gameboard.getWidth());
-					point.y = PotentialField.wrapCoord(point.y + player.y, gameboard.getHeight());
+					point.x = Utils.wrapCoord(point.x + player.x, gameboard.getWidth());
+					point.y = Utils.wrapCoord(point.y + player.y, gameboard.getHeight());
 
 					for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
 						if (obj instanceof Opponent) {
 							// Check for guaranteed hit
 							Opponent op = (Opponent) obj;
-							Point diff = directionToPoint(op.getDirection());
+							Point diff = Utils.directionToPoint(op.getDirection());
 							diff.translate(op.x - player.x, op.y - player.y);
 							if (diff.x == 0 || diff.y == 0) {
 								return Move.LASER;
@@ -62,11 +62,11 @@ public class PlayerAI extends ClientAI {
 
 			// Check regular shot range
 			for (int i = 1; i != 4; i++) {
-				Point point = directionToPoint(player.direction);
-				point.x = PotentialField.wrapCoord(point.x * i + player.x, gameboard.getWidth());
-				point.y = PotentialField.wrapCoord(point.y * i + player.y, gameboard.getHeight());
+				Point point = Utils.directionToPoint(player.direction);
+				point.x = Utils.wrapCoord(point.x * i + player.x, gameboard.getWidth());
+				point.y = Utils.wrapCoord(point.y * i + player.y, gameboard.getHeight());
 				for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
-					if (obj instanceof Turret) {
+					if (obj instanceof Turret && !((Turret) obj).isDead()) {
 						return Move.SHOOT;
 					}
 					if (obj instanceof Opponent) {
@@ -74,7 +74,7 @@ public class PlayerAI extends ClientAI {
 							return Move.SHOOT;
 						}
 						Opponent op = (Opponent) obj;
-						Point diff = directionToPoint(op.getDirection());
+						Point diff = Utils.directionToPoint(op.getDirection());
 						diff.translate(op.x - player.x, op.y - player.y);
 						if ((diff.x == 0) == (point.x == 0) && (diff.y < 0) == (point.y < 0)) {
 							return Move.SHOOT;
@@ -116,7 +116,6 @@ public class PlayerAI extends ClientAI {
 				}
 				next_move = getNextMove(gameboard, player, shortest_path.path.peek());
 			} catch (BadMoveException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -151,8 +150,8 @@ public class PlayerAI extends ClientAI {
 	public static Direction getMoveDirection(Gameboard gameboard, int fromX, int fromY, int toX, int toY)
 			throws BadMoveException {
 		// Get the positional differences
-		int dx = PotentialField.wrapDistanceSigned(fromX, toX, gameboard.getWidth());
-		int dy = PotentialField.wrapDistanceSigned(fromY, toY, gameboard.getHeight());
+		int dx = Utils.wrapDistanceSigned(fromX, toX, gameboard.getWidth());
+		int dy = Utils.wrapDistanceSigned(fromY, toY, gameboard.getHeight());
 		// Calculate the direction
 		if (dx == 0 && dy == 1) {
 			return Direction.DOWN;
@@ -194,20 +193,5 @@ public class PlayerAI extends ClientAI {
 		strength += comb.isShieldActive() ? 100 : 0;
 
 		return strength;
-	}
-
-	private Point directionToPoint(Direction d) {
-		switch (d) {
-		case DOWN:
-			return new Point(0, 1);
-		case UP:
-			return new Point(0, -1);
-		case RIGHT:
-			return new Point(1, 0);
-		case LEFT:
-			return new Point(-1, 0);
-		default:
-			return new Point(0, 0);
-		}
 	}
 }

@@ -42,35 +42,37 @@ public class PotentialField {
 				}
 				int tentative_g_score = current.distanceFromStart + pmap[current.x][current.y] + 1;
 				// Account for turning costs
-				//TODO: Look into this
-				//try {
-					int dxToNeighbor = current.x - n.x;
-					int dyToNeighbor = current.y - n.y;
-					boolean turning = false;
-					if (current.parent != null) {
-						int dxFromParent = current.parent.x - current.x;
-						int dyFromParent = current.parent.y - current.y;
-						if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
-							turning = true;
-						}
+				// TODO: Look into this
+				// try {
+				int dxToNeighbor = current.x - n.x;
+				int dyToNeighbor = current.y - n.y;
+				boolean turning = false;
+				if (current.parent != null) {
+					int dxFromParent = current.parent.x - current.x;
+					int dyFromParent = current.parent.y - current.y;
+					if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
+						turning = true;
 					}
-					// "Last move" - the first move the player has to move
-					//if (n.x == startX && n.y == startY && player.direction != PlayerAI.getMoveDirection(gameboard, n.x,
-					//		n.y, current.x, current.y)) {
-					//	turning = true;
-					//}
-					if (turning) {
-						tentative_g_score += pmap[current.x][current.y] + 1;
-					}
-				//} catch (BadMoveException e) {
-					// Current to neighbor is somehow more than one step!
-					//e.printStackTrace();
-				//}
+				}
+				// "Last move" - the first move the player has to move
+				// if (n.x == startX && n.y == startY && player.direction !=
+				// PlayerAI.getMoveDirection(gameboard, n.x,
+				// n.y, current.x, current.y)) {
+				// turning = true;
+				// }
+				if (turning) {
+					tentative_g_score += pmap[current.x][current.y] + 1;
+				}
+				// } catch (BadMoveException e) {
+				// Current to neighbor is somehow more than one step!
+				// e.printStackTrace();
+				// }
 				// Append to open set
 				if (tentative_g_score < n.distanceFromStart) {
 					n.parent = current;
 					n.distanceFromStart = tentative_g_score;
-					n.heuristicCost = n.distanceFromStart + manDistance(gameboard, n.x, n.y, finishX, finishY);
+					n.heuristicCost = n.distanceFromStart + Utils.manDistance(n.x, n.y, finishX, finishY,
+							gameboard.getWidth(), gameboard.getHeight());
 					openSet.add(n);
 				}
 			}
@@ -78,6 +80,7 @@ public class PotentialField {
 		throw new NoPathException();
 	}
 
+	/** Rebuild a {@link Path} object from a completed A star search. */
 	private Path rebuildPath(Node[][] allNodes, int startX, int startY, int finishX, int finishY) {
 		Deque<Point> path = new ArrayDeque<>();
 		Node current = allNodes[startX][startY];
@@ -106,7 +109,8 @@ public class PotentialField {
 		Set<Node> closedSet = new HashSet<>();
 		// If we can't make it to our destination in less than maxDistance
 		// steps, there is a wall in the way
-		int maxDistance = manDistance(gameboard, startX, startY, finishX, finishY);
+		int maxDistance = Utils.manDistance(startX, startY, finishX, finishY, gameboard.getWidth(),
+				gameboard.getHeight());
 		while (!openSet.isEmpty()) {
 			Node current = openSet.poll();
 			// Took too long to get to finish
@@ -126,7 +130,8 @@ public class PotentialField {
 				int tentative_g_score = current.distanceFromStart + 1;
 				if (tentative_g_score < n.distanceFromStart) {
 					n.distanceFromStart = tentative_g_score;
-					n.heuristicCost = n.distanceFromStart + manDistance(gameboard, n.x, n.y, finishX, finishY);
+					n.heuristicCost = n.distanceFromStart
+							+ Utils.manDistance(n.x, n.y, finishX, finishY, gameboard.getWidth(), gameboard.getWidth());
 					openSet.add(n);
 				}
 			}
@@ -138,10 +143,10 @@ public class PotentialField {
 		final int gw = gameboard.getWidth();
 		final int gh = gameboard.getHeight();
 		List<Node> points = new ArrayList<>();
-		points.add(allNodes[wrapCoord(current.x - 1, gw)][wrapCoord(current.y, gh)]);
-		points.add(allNodes[wrapCoord(current.x + 1, gw)][wrapCoord(current.y, gh)]);
-		points.add(allNodes[wrapCoord(current.x, gw)][wrapCoord(current.y - 1, gh)]);
-		points.add(allNodes[wrapCoord(current.x, gw)][wrapCoord(current.y + 1, gh)]);
+		points.add(allNodes[Utils.wrapCoord(current.x - 1, gw)][Utils.wrapCoord(current.y, gh)]);
+		points.add(allNodes[Utils.wrapCoord(current.x + 1, gw)][Utils.wrapCoord(current.y, gh)]);
+		points.add(allNodes[Utils.wrapCoord(current.x, gw)][Utils.wrapCoord(current.y - 1, gh)]);
+		points.add(allNodes[Utils.wrapCoord(current.x, gw)][Utils.wrapCoord(current.y + 1, gh)]);
 		return points;
 	}
 
@@ -159,6 +164,7 @@ public class PotentialField {
 		// Turrets
 		for (Turret t : gameboard.getTurrets()) {
 			int timeToFire = (gameboard.getCurrentTurnNumber() % (t.getFireTime() + t.getCooldownTime())) - 1;
+			timeToFire = timeToFire < t.getFireTime() ? 0 : timeToFire;
 			applyInfluenceShape(gameboard, pmap, t.x, t.y, Direction.UP, InfluenceShapes.getTurretPattern(timeToFire));
 		}
 	}
@@ -171,8 +177,8 @@ public class PotentialField {
 				Point p = s.getKey();
 				Integer v = s.getValue();
 				// Transform
-				int x = wrapCoord(ix + p.x, gameboard.getWidth());
-				int y = wrapCoord(iy - p.y, gameboard.getHeight());
+				int x = Utils.wrapCoord(ix + p.x, gameboard.getWidth());
+				int y = Utils.wrapCoord(iy - p.y, gameboard.getHeight());
 				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
@@ -184,8 +190,8 @@ public class PotentialField {
 				Point p = s.getKey();
 				Integer v = s.getValue();
 				// Transform
-				int x = wrapCoord(ix - p.y, gameboard.getWidth());
-				int y = wrapCoord(iy + p.x, gameboard.getHeight());
+				int x = Utils.wrapCoord(ix - p.y, gameboard.getWidth());
+				int y = Utils.wrapCoord(iy + p.x, gameboard.getHeight());
 				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
@@ -197,8 +203,8 @@ public class PotentialField {
 				Point p = s.getKey();
 				Integer v = s.getValue();
 				// Transform
-				int x = wrapCoord(ix + p.y, gameboard.getWidth());
-				int y = wrapCoord(iy + p.x, gameboard.getHeight());
+				int x = Utils.wrapCoord(ix + p.y, gameboard.getWidth());
+				int y = Utils.wrapCoord(iy + p.x, gameboard.getHeight());
 				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
@@ -210,8 +216,8 @@ public class PotentialField {
 				Point p = s.getKey();
 				Integer v = s.getValue();
 				// Transform
-				int x = wrapCoord(ix + p.x, gameboard.getWidth());
-				int y = wrapCoord(iy + p.y, gameboard.getHeight());
+				int x = Utils.wrapCoord(ix + p.x, gameboard.getWidth());
+				int y = Utils.wrapCoord(iy + p.y, gameboard.getHeight());
 				if (!checkForWall(gameboard, ix, iy, x, y)) {
 					// Add value
 					pmap[x][y] += v;
@@ -225,34 +231,5 @@ public class PotentialField {
 
 	public int[][] getPotentialMap() {
 		return pmap;
-	}
-
-	public static int wrapCoord(int c, int max) {
-		if (c <= -1) {
-			return c + max;
-		} else if (c >= max) {
-			return c - max;
-		}
-		return c;
-	}
-
-	public static int wrapDistanceSigned(int x1, int x2, int max) {
-		int dx = x2 - x1;
-		int dx2 = dx - max;
-		if (Math.abs(dx) < Math.abs(dx2)) {
-			return dx;
-		}
-		return dx2;
-	}
-
-	public static int wrapDistance(int x1, int x2, int max) {
-		int dx = Math.abs(x1 - x2);
-		return Math.min(dx, Math.abs(dx - max));
-	}
-
-	public int manDistance(Gameboard gameboard, int x, int y, int x2, int y2) {
-		int dx = wrapDistance(x, x2, gameboard.getWidth());
-		int dy = wrapDistance(y, y2, gameboard.getHeight());
-		return dx + dy;
 	}
 }
