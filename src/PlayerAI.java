@@ -69,12 +69,14 @@ public class PlayerAI extends ClientAI {
 		}
 
 		// Check regular shot
+		boolean hitWall = false;
 		for (int i = 1; i != 4; i++) {
 			Point point = Utils.directionToPoint(player.direction);
 			point.x = Utils.wrapCoord(point.x * i + player.x, gameboard.getWidth());
 			point.y = Utils.wrapCoord(point.y * i + player.y, gameboard.getHeight());
 			for (GameObjects obj : gameboard.getGameObjectsAtTile(point.x, point.y)) {
 				if (obj instanceof Wall) {
+					hitWall = true;
 					break;
 				} else if (obj instanceof Turret) {
 					Turret tur = (Turret) obj;
@@ -82,6 +84,7 @@ public class PlayerAI extends ClientAI {
 						float roi = ((float) TURRET_SCORE) / currentDanger;
 						moveQueue.add(new WeightedMove(Move.SHOOT, roi));
 					} else {
+						hitWall = true;
 						break;
 					}
 				} else if (obj instanceof Opponent) {
@@ -100,6 +103,9 @@ public class PlayerAI extends ClientAI {
 						moveQueue.add(new WeightedMove(Move.SHOOT, roi));
 					}
 				}
+			}
+			if (hitWall) {
+				break;
 			}
 		}
 
