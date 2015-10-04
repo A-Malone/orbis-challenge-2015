@@ -59,31 +59,29 @@ public class PotentialField {
 				}
 				int tentative_g_score = current.distanceFromStart + pmap[current.x][current.y] + 1;
 				// Account for turning costs
-				// TODO: Look into this
-//				 try {
-				int dxToNeighbor = current.x - n.x;
-				int dyToNeighbor = current.y - n.y;
-				boolean turning = false;
-				if (current.parent != null) {
-					int dxFromParent = current.parent.x - current.x;
-					int dyFromParent = current.parent.y - current.y;
-					if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
+				try {
+					int dxToNeighbor = current.x - n.x;
+					int dyToNeighbor = current.y - n.y;
+					boolean turning = false;
+					if (current.parent != null) {
+						int dxFromParent = current.parent.x - current.x;
+						int dyFromParent = current.parent.y - current.y;
+						if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
+							turning = true;
+						}
+					}
+					// "Last move" - the first move the player has to move
+					if (n.x == startX && n.y == startY && player.direction != PlayerAI.getMoveDirection(gameboard, n.x,
+							n.y, current.x, current.y)) {
 						turning = true;
 					}
+					if (turning) {
+						tentative_g_score += pmap[current.x][current.y] + 1;
+					}
+				} catch (BadMoveException e) {
+					// Current to neighbor is somehow more than one step!
+					e.printStackTrace();
 				}
-				// // "Last move" - the first move the player has to move
-				// if (n.x == startX && n.y == startY
-				// && player.direction != PlayerAI.getMoveDirection(gameboard,
-				// n.x, n.y, current.x, current.y)) {
-				// turning = true;
-				// }
-				if (turning) {
-					tentative_g_score += pmap[current.x][current.y] + 1;
-				}
-				// } catch (BadMoveException e) {
-				// Current to neighbor is somehow more than one step!
-				// e.printStackTrace();
-				// }
 				// Append to open set
 				if (tentative_g_score < n.distanceFromStart) {
 					n.parent = current;
@@ -110,6 +108,9 @@ public class PotentialField {
 		return new Path(path, allNodes[startX][startY].distanceFromStart);
 	}
 
+	/**
+	 * Check if there is a wall immediately between start and finish
+	 */
 	private boolean checkForWall(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
 			throws MapOutOfBoundsException {
 		Node[][] allNodes = new Node[gameboard.getWidth()][gameboard.getHeight()];
@@ -156,6 +157,14 @@ public class PotentialField {
 		return true;
 	}
 
+	/**
+	 * Get the neighbors in four cardinal directions of current.
+	 * 
+	 * @param gameboard
+	 * @param allNodes
+	 * @param current
+	 * @return
+	 */
 	private List<Node> getNeighbors(Gameboard gameboard, Node[][] allNodes, Node current) {
 		final int gw = gameboard.getWidth();
 		final int gh = gameboard.getHeight();
@@ -167,6 +176,9 @@ public class PotentialField {
 		return points;
 	}
 
+	/**
+	 * Update the potential map. MUST BE CALLED AT THE BEGINNING OF EVERY ROUND.
+	 */
 	public void updatePotentialMap(Gameboard gameboard, Opponent opponent, Player player)
 			throws MapOutOfBoundsException {
 		pmap = new int[gameboard.getWidth()][gameboard.getHeight()];
@@ -186,6 +198,19 @@ public class PotentialField {
 		}
 	}
 
+	/**
+	 * Apply the given influence shape to the pmap relative to (ix, iy) in the
+	 * given direction. This method also accounts for walls between (ix, iy) and
+	 * shape.
+	 * 
+	 * @param gameboard
+	 * @param pmap
+	 * @param ix
+	 * @param iy
+	 * @param direction
+	 * @param shape
+	 * @throws MapOutOfBoundsException
+	 */
 	private void applyInfluenceShape(Gameboard gameboard, int[][] pmap, int ix, int iy, Direction direction,
 			Map<Point, Integer> shape) throws MapOutOfBoundsException {
 		switch (direction) {
@@ -246,6 +271,9 @@ public class PotentialField {
 		}
 	}
 
+	/**
+	 * Get the current potential map. DO NOT MODIFY IT!
+	 */
 	public int[][] getPotentialMap() {
 		return pmap;
 	}
