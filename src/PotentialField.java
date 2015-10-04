@@ -14,7 +14,7 @@ import java.util.Map.Entry;
 public class PotentialField {
 	private int[][] pmap;
 
-	public Queue<Point> getBestPath(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
+	public Path getBestPath(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
 			throws NoPathException, MapOutOfBoundsException {
 		Node[][] allNodes = new Node[gameboard.getWidth()][gameboard.getHeight()];
 		for (int x = 0; x < gameboard.getWidth(); x++) {
@@ -27,8 +27,6 @@ public class PotentialField {
 		});
 		openSet.add(allNodes[finishX][finishY]);
 		Set<Node> closedSet = new HashSet<>();
-		// If we can't make it to our destination in less than maxDistance
-		// steps, there is a wall in the way
 		while (!openSet.isEmpty()) {
 			Node current = openSet.poll();
 			// Finish
@@ -53,7 +51,7 @@ public class PotentialField {
 		throw new NoPathException();
 	}
 
-	private Deque<Point> rebuildPath(Node[][] allNodes, int startX, int startY, int finishX, int finishY) {
+	private Path rebuildPath(Node[][] allNodes, int startX, int startY, int finishX, int finishY) {
 		Deque<Point> path = new ArrayDeque<>();
 		Node current = allNodes[startX][startY];
 		while (current.x != finishX || current.y != finishY) {
@@ -62,7 +60,7 @@ public class PotentialField {
 			// Push it into the path
 			path.add(new Point(current.x, current.y));
 		}
-		return path;
+		return new Path(path, allNodes[startX][startY].distanceFromStart);
 	}
 
 	private boolean checkForWall(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
