@@ -41,12 +41,16 @@ public class PlayerAI extends ClientAI {
 			
 			for(PowerUp pup : powerUps){
 				try {
-					Queue<Point> path = potentialField.getBestPath(gameboard, player.x, player.y, pup.x, pup.y);
+					Path path = potentialField.getBestPath(gameboard, player.x, player.y, pup.x, pup.y);
+					if (path.cost < shortest_length){
+						shortest_path = path.path;
+					}
 				} catch (NoPathException e) {
 					
 				}
 			}
-			next_move = shortest_path.peek();
+			//next_move = shortest_path.peek();
+			next_move = Move.FORWARD;
 		}
 		else
 		{
