@@ -33,7 +33,7 @@ public class PlayerAI extends ClientAI {
 		
 		//----Check for targets
 		//Players
-		int player_score = 0;
+		
 		
 		//----Plan movement
 		Move next_move = Move.FORWARD;
@@ -44,7 +44,7 @@ public class PlayerAI extends ClientAI {
 			float best_roi = 0;
 			Path shortest_path = null;
 			for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
-				try {					
+				try {
 					GameObjects obj = entry.getKey();
 					Path path = potentialField.getBestPath(gameboard, player.x, player.y, obj.x, obj.y);
 					float roi = (float)(getReward(obj)) / path.cost;
