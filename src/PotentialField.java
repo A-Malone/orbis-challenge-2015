@@ -1,6 +1,7 @@
 import java.awt.Point;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.Map.Entry;
 
 public class PotentialField {
@@ -191,7 +193,7 @@ public class PotentialField {
 			applyInfluenceShape(gameboard, pmap, b.x, b.y, b.direction, InfluenceShapes.getBulletPattern());
 		}
 		// Turrets
-		for (Turret t : gameboard.getTurrets()) {
+		for (Turret t : gameboard.getTurrets().stream().filter(t -> !t.isDead()).collect(Collectors.toList())) {
 			int timeToFire = (gameboard.getCurrentTurnNumber() % (t.getFireTime() + t.getCooldownTime())) - 1;
 			timeToFire = timeToFire < t.getFireTime() ? 0 : timeToFire;
 			applyInfluenceShape(gameboard, pmap, t.x, t.y, Direction.UP, InfluenceShapes.getTurretPattern(timeToFire));

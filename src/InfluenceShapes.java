@@ -14,20 +14,22 @@ public class InfluenceShapes {
 	private static Map<Point, Integer> playerPattern;
 	private static Map<Point, Integer> playerWithLaserPattern;
 
+	private static final int DANGER_FACTOR = 50;
+
 	public static Map<Point, Integer> getBulletPattern() {
 		// Lazy init
 		if (bulletPattern == null) {
 			bulletPattern = new HashMap<Point, Integer>();
 			// Forward line
-			bulletPattern.put(new Point(0, 1), 10);
-			bulletPattern.put(new Point(0, 2), 9);
-			bulletPattern.put(new Point(0, 3), 6);
-			bulletPattern.put(new Point(0, 4), 4);
+			bulletPattern.put(new Point(0, 1), (int) (0.1 * DANGER_FACTOR));
+			bulletPattern.put(new Point(0, 2), (int) (0.9 * DANGER_FACTOR));
+			bulletPattern.put(new Point(0, 3), (int) (0.6 * DANGER_FACTOR));
+			bulletPattern.put(new Point(0, 4), (int) (0.4 * DANGER_FACTOR));
 			// Side threats
-			bulletPattern.put(new Point(1, 1), 4);
-			bulletPattern.put(new Point(-1, 1), 4);
-			bulletPattern.put(new Point(2, 1), 2);
-			bulletPattern.put(new Point(-2, 1), 2);
+			bulletPattern.put(new Point(1, 1), (int) (0.4 * DANGER_FACTOR));
+			bulletPattern.put(new Point(-1, 1), (int) (0.4 * DANGER_FACTOR));
+			bulletPattern.put(new Point(2, 1), (int) (0.2 * DANGER_FACTOR));
+			bulletPattern.put(new Point(-2, 1), (int) (0.2 * DANGER_FACTOR));
 		}
 		return bulletPattern;
 	}
@@ -38,13 +40,13 @@ public class InfluenceShapes {
 			// Potential of being imminently shot at
 			playerPattern = new HashMap<Point, Integer>(getBulletPattern());
 			// Longshots
-			playerPattern.put(new Point(0, 5), 2);
-			playerPattern.put(new Point(0, 6), 2);
-			playerPattern.put(new Point(0, 7), 1);
+			playerPattern.put(new Point(0, 5), (int) (0.2 * DANGER_FACTOR));
+			playerPattern.put(new Point(0, 6), (int) (0.2 * DANGER_FACTOR));
+			playerPattern.put(new Point(0, 7), (int) (0.1 * DANGER_FACTOR));
 			// Potential of getting turned on
-			playerPattern.put(new Point(-1, 0), 4);
-			playerPattern.put(new Point(1, 0), 4);
-			playerPattern.put(new Point(1, -1), 4);
+			playerPattern.put(new Point(-1, 0), (int) (0.4 * DANGER_FACTOR));
+			playerPattern.put(new Point(1, 0), (int) (0.4 * DANGER_FACTOR));
+			playerPattern.put(new Point(1, -1), (int) (0.4 * DANGER_FACTOR));
 		}
 
 		// The player has a laser!
@@ -63,7 +65,7 @@ public class InfluenceShapes {
 	public static Map<Point, Integer> getTurretPattern(int framesToFire) {
 		// Turrets always have different patterns based on framesToFire
 		Map<Point, Integer> pattern = new HashMap<Point, Integer>();
-		int threat = 10 - framesToFire * 2;
+		int threat = (int) ((1 - framesToFire * 0.2) * DANGER_FACTOR);
 		if (threat < 0) {
 			// Nothing to see here...
 			return Collections.emptyMap();
