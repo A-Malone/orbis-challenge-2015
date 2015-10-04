@@ -23,7 +23,6 @@ public class PlayerAI extends ClientAI {
 	@Override
 	public Move getMove(Gameboard gameboard, Opponent opponent, Player player)
 			throws NoItemException, MapOutOfBoundsException {
-
 		// ----Potential Field Update
 		potentialField.updatePotentialMap(gameboard, opponent, player);
 		for (int y = 0; y < gameboard.getHeight(); y++) {

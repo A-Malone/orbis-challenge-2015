@@ -27,7 +27,7 @@ public final class Utils {
 
 	public static int wrapDistanceSigned(int x1, int x2, int max) {
 		int dx = x2 - x1;
-		int dx2 = dx - max;
+		int dx2 = dx < 0 ? dx + max : dx - max;
 		if (Math.abs(dx) < Math.abs(dx2)) {
 			return dx;
 		}
