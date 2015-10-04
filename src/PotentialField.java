@@ -14,7 +14,7 @@ import java.util.Map.Entry;
 public class PotentialField {
 	private int[][] pmap;
 
-	public Path getBestPath(Gameboard gameboard, int startX, int startY, int finishX, int finishY)
+	public Path getBestPath(Gameboard gameboard, Player player, int startX, int startY, int finishX, int finishY)
 			throws NoPathException, MapOutOfBoundsException {
 		Node[][] allNodes = new Node[gameboard.getWidth()][gameboard.getHeight()];
 		for (int x = 0; x < gameboard.getWidth(); x++) {
@@ -42,15 +42,30 @@ public class PotentialField {
 				}
 				int tentative_g_score = current.distanceFromStart + pmap[current.x][current.y] + 1;
 				// Account for turning costs
-				if (current.parent != null) {
-					int dxFromParent = current.parent.x - current.x;
-					int dyFromParent = current.parent.y - current.y;
+				//TODO: Look into this
+				//try {
 					int dxToNeighbor = current.x - n.x;
 					int dyToNeighbor = current.y - n.y;
-					if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
+					boolean turning = false;
+					if (current.parent != null) {
+						int dxFromParent = current.parent.x - current.x;
+						int dyFromParent = current.parent.y - current.y;
+						if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
+							turning = true;
+						}
+					}
+					// "Last move" - the first move the player has to move
+					//if (n.x == startX && n.y == startY && player.direction != PlayerAI.getMoveDirection(gameboard, n.x,
+					//		n.y, current.x, current.y)) {
+					//	turning = true;
+					//}
+					if (turning) {
 						tentative_g_score += pmap[current.x][current.y] + 1;
 					}
-				}
+				//} catch (BadMoveException e) {
+					// Current to neighbor is somehow more than one step!
+					//e.printStackTrace();
+				//}
 				// Append to open set
 				if (tentative_g_score < n.distanceFromStart) {
 					n.parent = current;
@@ -219,6 +234,15 @@ public class PotentialField {
 			return c - max;
 		}
 		return c;
+	}
+
+	public static int wrapDistanceSigned(int x1, int x2, int max) {
+		int dx = x2 - x1;
+		int dx2 = dx - max;
+		if (Math.abs(dx) < Math.abs(dx2)) {
+			return dx;
+		}
+		return dx2;
 	}
 
 	public static int wrapDistance(int x1, int x2, int max) {
