@@ -14,8 +14,25 @@ import java.util.Map.Entry;
 public class PotentialField {
 	private int[][] pmap;
 
-	public Path getBestPath(Gameboard gameboard, Player player, int startX, int startY, int finishX, int finishY)
+	/**
+	 * Get the best path from player to finishX using A* and accounting for
+	 * potential that was previously calculated.
+	 * 
+	 * @param gameboard
+	 * @param player
+	 * @param finishX
+	 * @param finishY
+	 * @return a {@link Path} object that contains the steps to take and the
+	 *         total cost of the path
+	 * @throws NoPathException
+	 *             if no path can be found
+	 * @throws MapOutOfBoundsException
+	 *             if the pathfinder tries to leave the map
+	 */
+	public Path getBestPath(Gameboard gameboard, Player player, int finishX, int finishY)
 			throws NoPathException, MapOutOfBoundsException {
+		int startX = player.x;
+		int startY = player.y;
 		Node[][] allNodes = new Node[gameboard.getWidth()][gameboard.getHeight()];
 		for (int x = 0; x < gameboard.getWidth(); x++) {
 			for (int y = 0; y < gameboard.getHeight(); y++) {
@@ -43,7 +60,7 @@ public class PotentialField {
 				int tentative_g_score = current.distanceFromStart + pmap[current.x][current.y] + 1;
 				// Account for turning costs
 				// TODO: Look into this
-				// try {
+//				 try {
 				int dxToNeighbor = current.x - n.x;
 				int dyToNeighbor = current.y - n.y;
 				boolean turning = false;
@@ -54,10 +71,10 @@ public class PotentialField {
 						turning = true;
 					}
 				}
-				// "Last move" - the first move the player has to move
-				// if (n.x == startX && n.y == startY && player.direction !=
-				// PlayerAI.getMoveDirection(gameboard, n.x,
-				// n.y, current.x, current.y)) {
+				// // "Last move" - the first move the player has to move
+				// if (n.x == startX && n.y == startY
+				// && player.direction != PlayerAI.getMoveDirection(gameboard,
+				// n.x, n.y, current.x, current.y)) {
 				// turning = true;
 				// }
 				if (turning) {

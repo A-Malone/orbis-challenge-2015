@@ -97,7 +97,7 @@ public class PlayerAI extends ClientAI {
 			for (Entry<GameObjects, Integer> entry : objectives.entrySet()) {
 				try {
 					GameObjects obj = entry.getKey();
-					Path path = potentialField.getBestPath(gameboard, player, player.x, player.y, obj.x, obj.y);
+					Path path = potentialField.getBestPath(gameboard, player, obj.x, obj.y);
 					float roi = (float) (getReward(obj)) / path.cost;
 					if (roi > best_roi) {
 						best_roi = roi;
