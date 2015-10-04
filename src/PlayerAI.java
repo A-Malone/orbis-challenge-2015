@@ -42,9 +42,9 @@ public class PlayerAI extends ClientAI {
 		// ----Check Current Danger
 		int[][] potentialMap = potentialField.getPotentialMap();
 		int currentDanger = potentialMap[player.x][player.y];
-		
-		//Add in some ROI for standing still
-		moveQueue.add(new WeightedMove(Move.NONE, (float)100 / currentDanger));
+
+		// Add in some ROI for standing still
+		moveQueue.add(new WeightedMove(Move.NONE, (float) 100 / (currentDanger != 0 ? currentDanger : 1)));
 
 		// ----Check for targets
 		// Check laser range
@@ -127,6 +127,7 @@ public class PlayerAI extends ClientAI {
 		}
 
 		// Return the move that leads to the best ROI
+		System.out.println(moveQueue);
 		return moveQueue.peek().move;
 	}
 
