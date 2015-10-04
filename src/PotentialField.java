@@ -40,6 +40,17 @@ public class PotentialField {
 					continue;
 				}
 				int tentative_g_score = current.distanceFromStart + pmap[current.x][current.y] + 1;
+				// Account for turning costs
+				if (current.parent != null) {
+					int dxFromParent = current.parent.x - current.x;
+					int dyFromParent = current.parent.y - current.y;
+					int dxToNeighbor = current.x - n.x;
+					int dyToNeighbor = current.y - n.y;
+					if (dxFromParent != dxToNeighbor || dyFromParent != dyToNeighbor) {
+						tentative_g_score += pmap[current.x][current.y] + 1;
+					}
+				}
+				// Append to open set
 				if (tentative_g_score < n.distanceFromStart) {
 					n.parent = current;
 					n.distanceFromStart = tentative_g_score;
@@ -96,9 +107,11 @@ public class PotentialField {
 					continue;
 				}
 				int tentative_g_score = current.distanceFromStart + 1;
-				n.distanceFromStart = tentative_g_score;
-				n.heuristicCost = n.distanceFromStart + manDistance(gameboard, n.x, n.y, finishX, finishY);
-				openSet.add(n);
+				if (tentative_g_score < n.distanceFromStart) {
+					n.distanceFromStart = tentative_g_score;
+					n.heuristicCost = n.distanceFromStart + manDistance(gameboard, n.x, n.y, finishX, finishY);
+					openSet.add(n);
+				}
 			}
 		}
 		return true;
