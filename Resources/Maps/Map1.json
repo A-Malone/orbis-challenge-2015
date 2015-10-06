@@ -6,7 +6,7 @@
 	"player2X": 13,
 	"player2Y": 14,
 	"initialHP": 2,
-	"maxTurns": 100,
+	"maxTurns": 200,
 	"turrets": [{
 		"x": 13,
 		"y": 10,

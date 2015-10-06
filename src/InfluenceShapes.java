@@ -14,7 +14,7 @@ public class InfluenceShapes {
 	private static Map<Point, Integer> playerPattern;
 	private static Map<Point, Integer> playerWithLaserPattern;
 
-	public static final int DANGER_FACTOR = 50;
+	public static final int DANGER_FACTOR = 17;
 
 	public static Map<Point, Integer> getBulletPattern() {
 		// Lazy init

@@ -10,10 +10,9 @@ public class PlayerAI extends ClientAI {
 	static final int PLAYER_SCORE = 750;
 	static final int TURRET_SCORE = 500;
 
-	// Parameters
-	static final int DANGER_THRESHOLD = 8;
-	static final int BLOODTHIRST = 2;
-	static final int FEAR_OPPONENT = 5;
+	// Parameters	
+	static final int BLOODTHIRST = 15;
+	static final int FEAR_OPPONENT = 1;
 
 	// ----FIELDS
 	// ------------------------------------------------------------
@@ -89,8 +88,9 @@ public class PlayerAI extends ClientAI {
 				} else if (obj instanceof Turret) {
 					Turret tur = (Turret) obj;
 					if (!tur.isDead()) {
-						float roi = ((float) TURRET_SCORE) / currentDanger;
-						moveQueue.add(new WeightedMove(Move.SHOOT, roi));
+						//float roi = ((float) TURRET_SCORE) / currentDanger;
+						//moveQueue.add(new WeightedMove(Move.SHOOT, roi));
+						return Move.SHOOT;
 					} else {
 						hitWall = true;
 						break;
@@ -108,7 +108,8 @@ public class PlayerAI extends ClientAI {
 					} else {
 						int dist_factor = (i > 2) ? i : 0;
 						float roi = ((float) PLAYER_SCORE) / (currentDanger) / dist_factor;
-						moveQueue.add(new WeightedMove(Move.SHOOT, roi));
+						//moveQueue.add(new WeightedMove(Move.SHOOT, roi));
+						return Move.SHOOT;
 					}
 				}
 			}
