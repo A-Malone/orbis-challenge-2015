@@ -15,4 +15,4 @@ Parameter tunning is a large issue because the algorithm uses heuristics to judg
 
 Results
 -------
-The iteration of our bot submitted to the challenge placed 10th out of 80 submitted bots. Our favorite iteration, however, was discovered 5 minutes after the competition closed, involves setting the 'bloodthirstiness' parameter, responsible for the reward for killing the enemy, way up. While our bot would lose to tower killing bots, bots that did not have good combat abilities would quickly fall prey to our aggressive strategy. In the end, it was a ton of fun to watch. <GIFs coming>
+The iteration of our bot submitted to the challenge placed 10th out of 80 submitted bots. Our favorite iteration, however, discovered 5 minutes after the competition closed, involves tripling the 'bloodthirstiness' parameter, responsible for the reward for killing the enemy. While our bot would lose in points to tower killing bots, bots that did not have good combat abilities would quickly fall prey to our aggressive strategy. In the end, it was a ton of fun to watch. <GIFs coming>
